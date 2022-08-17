@@ -1,5 +1,7 @@
 package korner.dev.customer;
 
+import korner.dev.clients.fraud.FraudCheckResponse;
+import korner.dev.clients.fraud.FraudClient;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -7,6 +9,7 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class CustomerService {
     private final CustomerRepository customerRepository;
+    private final FraudClient fraudClient;
     public void registerCustomer(CustomerRegistrationRequest request) {
         Customer customer = Customer.builder()
                 .firstName(request.firstName())
@@ -16,8 +19,12 @@ public class CustomerService {
 
         // todo: check email is valid
         // todo : check email not taken
+        customerRepository.saveAndFlush(customer);
         // todo : check if fraudster
-        customerRepository.save(customer);
+        FraudCheckResponse fraudCheckResponse = fraudClient.isFraudster(customer.getId());
+        if(fraudCheckResponse.isFraudster()){
+            throw new IllegalStateException("Fraudster");
+        }
         // todo : send notification
     }
 }
