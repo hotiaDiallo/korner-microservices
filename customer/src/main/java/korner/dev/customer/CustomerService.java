@@ -16,6 +16,8 @@ public class CustomerService {
 
         // todo: check email is valid
         // todo : check email not taken
+        // todo : check if fraudster
         customerRepository.save(customer);
+        // todo : send notification
     }
 }
