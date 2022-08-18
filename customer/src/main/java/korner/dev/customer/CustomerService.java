@@ -2,6 +2,8 @@ package korner.dev.customer;
 
 import korner.dev.clients.fraud.FraudCheckResponse;
 import korner.dev.clients.fraud.FraudClient;
+import korner.dev.clients.notification.NotificationClient;
+import korner.dev.clients.notification.NotificationRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +11,8 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class CustomerService {
     private final CustomerRepository customerRepository;
+
+    private final NotificationClient notificationClient;
     private final FraudClient fraudClient;
     public void registerCustomer(CustomerRegistrationRequest request) {
         Customer customer = Customer.builder()
@@ -25,6 +29,14 @@ public class CustomerService {
         if(fraudCheckResponse.isFraudster()){
             throw new IllegalStateException("Fraudster");
         }
-        // todo : send notification
+        // todo: make it async. i.e add to queue
+        notificationClient.sendNotification(
+                new NotificationRequest(
+                        customer.getId(),
+                        customer.getEmail(),
+                        String.format("Hi %s, welcome to korner service...",
+                                customer.getFirstName())
+                )
+        );
     }
 }
