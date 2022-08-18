@@ -1,5 +1,6 @@
 package korner.dev.customer;
 
+import korner.dev.amqp.RabbitMQMessageProducer;
 import korner.dev.clients.fraud.FraudCheckResponse;
 import korner.dev.clients.fraud.FraudClient;
 import korner.dev.clients.notification.NotificationClient;
@@ -14,6 +15,7 @@ public class CustomerService {
 
     private final NotificationClient notificationClient;
     private final FraudClient fraudClient;
+    private final RabbitMQMessageProducer rabbitMQMessageProducer;
     public void registerCustomer(CustomerRegistrationRequest request) {
         Customer customer = Customer.builder()
                 .firstName(request.firstName())
@@ -30,13 +32,17 @@ public class CustomerService {
             throw new IllegalStateException("Fraudster");
         }
         // todo: make it async. i.e add to queue
-        notificationClient.sendNotification(
-                new NotificationRequest(
-                        customer.getId(),
-                        customer.getEmail(),
-                        String.format("Hi %s, welcome to korner service...",
-                                customer.getFirstName())
-                )
+        NotificationRequest notificationRequest = new NotificationRequest(
+                customer.getId(),
+                customer.getEmail(),
+                String.format("Hi %s, welcome to korner service...",
+                        customer.getFirstName())
         );
+        rabbitMQMessageProducer.publish(
+                notificationRequest,
+                "internal.exchange",
+                "internal.notification.routing-key"
+        );
+        //notificationClient.sendNotification(notificationRequest);
     }
 }
